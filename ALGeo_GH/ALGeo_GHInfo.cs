@@ -7,7 +7,7 @@ namespace ALGeo_GH
 {
     public class ALGeo_GHInfo : GH_AssemblyInfo
     {
-        public override string Name => "ALGeo_GH";
+        public override string Name => "ALGeo";
 
         //Return a 24x24 pixel bitmap to represent this GHA library.
         public override Bitmap Icon => null;

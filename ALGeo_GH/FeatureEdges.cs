@@ -12,7 +12,7 @@ namespace ALGeo_GH
 {
     public class FeatureEdges : GH_Component
     {
-        public FeatureEdges() : base("FeatureEdges", "FeatureEdges", "Extract the feature edges of a mesh according to angles. ", "Coral", "DDG") { }
+        public FeatureEdges() : base("FeatureEdges", "FeatureEdges", "Extract the feature edges of a mesh according to angles. ", "ALGeo", "DDG") { }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
