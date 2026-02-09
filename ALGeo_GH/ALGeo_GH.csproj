@@ -45,6 +45,9 @@
     <ProjectReference Include="..\ALGeo\ALGeo.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="KDTree">
+      <HintPath>..\..\TOPX\bin\x64\Release\net7.0\KDTree.dll</HintPath>
+    </Reference>
     <Reference Include="Plankton">
       <HintPath>..\ALGeo\Dependencies\Plankton.dll</HintPath>
     </Reference>

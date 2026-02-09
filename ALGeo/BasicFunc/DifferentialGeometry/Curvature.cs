@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Plankton;
 
-namespace ALDGP
+namespace ALGeo
 {
     public class Curvature : DifferentialGeometry
     {
@@ -16,7 +16,7 @@ namespace ALDGP
         public static double[] LaplacianMeanCurvature(PlanktonMesh pmesh)
         {
             double[] curvature = new double[pmesh.Vertices.Count];
-            Vector3D[] cotL = LaplaceOperator.CotangentLaplace(pmesh);
+            Vector[] cotL = LaplaceOperator.CotangentLaplace(pmesh);
             for (int i = 0; i < cotL.Length; i++)
             {
                 curvature[i] = pmesh.Vertices.IsBoundary(i) ? 0.0f : cotL[i].Length / 2.0f;
@@ -41,8 +41,8 @@ namespace ALDGP
                 var v0 = pmesh.Halfedges[2 * i].StartVertex;
                 var v1 = pmesh.Halfedges.EndVertex(2 * i);
 
-                var p0 = pmesh.Vertices[v0].ToVector3D();
-                var p1 = pmesh.Vertices[v1].ToVector3D();
+                var p0 = pmesh.Vertices[v0].ToVector();
+                var p1 = pmesh.Vertices[v1].ToVector();
 
                 var n0 = ns[v0];
                 var n1 = ns[v1];
@@ -74,17 +74,17 @@ namespace ALDGP
             Parallel.For(0, pmesh.Vertices.Count, i =>
             {
                 int[] neighbours = pmesh.Vertices.GetVertexNeighbours(i);
-                Vector3D pi = pmesh.Vertices[i].ToVector3D();
+                Vector pi = pmesh.Vertices[i].ToVector();
                 int valance = pmesh.Vertices.GetValence(i);
                 double sum = 0.0f;
                 double area = MixedVoronoiArea(pmesh, i);
                 for (int j = 0; j < valance; j++)
                 {
-                    Vector3D pj = pmesh.Vertices[neighbours[j]].ToVector3D();
-                    Vector3D pjNext = pmesh.Vertices[neighbours[(j + 1) % valance]].ToVector3D();
+                    Vector pj = pmesh.Vertices[neighbours[j]].ToVector();
+                    Vector pjNext = pmesh.Vertices[neighbours[(j + 1) % valance]].ToVector();
 
-                    Vector3D v1 = pi - pj;
-                    Vector3D v2 = pi - pjNext;
+                    Vector v1 = pi - pj;
+                    Vector v2 = pi - pjNext;
 
                     double cos = v1*v2 / v1.Length / v2.Length;
 
@@ -129,9 +129,9 @@ namespace ALDGP
         /// <param name="pmesh"> Input a plankton mesh.</param>
         /// <param name="maxCurvatures"> The maximum curvature of each vertex.</param>
         /// <returns></returns>
-        public static Vector3D[] FindMaxDirections(PlanktonMesh pmesh, double[] maxCurvatures)
+        public static Vector[] FindMaxDirections(PlanktonMesh pmesh, double[] maxCurvatures)
         {
-            Vector3D[] maxDirections = new Vector3D[maxCurvatures.Length];
+            Vector[] maxDirections = new Vector[maxCurvatures.Length];
             for (int i = 0; i < pmesh.Vertices.Count; i++)
             {
                 var hes = pmesh.Vertices.GetIncomingHalfedges(i);
@@ -153,9 +153,9 @@ namespace ALDGP
                 var third_vert = maxCurvatures[pre_vert_id] > maxCurvatures[next_vert_id] ? pre_vert_id : next_vert_id;
 
                 var third_weight = maxCurvatures[third_vert] / (maxCurvatures[second_vert] + maxCurvatures[third_vert]);
-                var endV = third_weight * pmesh.Vertices[third_vert].ToVector3D() +
-                           (1 - third_weight) * pmesh.Vertices[second_vert].ToVector3D();
-                maxDirections[i] = (endV - pmesh.Vertices[i].ToVector3D()).Unitize();
+                var endV = third_weight * pmesh.Vertices[third_vert].ToVector() +
+                           (1 - third_weight) * pmesh.Vertices[second_vert].ToVector();
+                maxDirections[i] = (endV - pmesh.Vertices[i].ToVector()).Unitize();
             }
 
             return maxDirections;

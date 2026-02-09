@@ -7,11 +7,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ALDGP
+namespace ALGeo
 {
     public class Parameterization
     {
-        public static PlanktonMesh HarmonicMethod(PlanktonMesh pmesh, List<Vector3D> textureVerts)
+        public static PlanktonMesh HarmonicMethod(PlanktonMesh pmesh, List<Vector> textureVerts)
         {
             List<int> free_vertices = new List<int>();
             int[] idx = new int[pmesh.Vertices.Count];
@@ -42,7 +42,7 @@ namespace ALDGP
                 var v = free_vertices[i];
                 var hs = pmesh.Vertices.GetHalfedges(v);
                 var ww = 0.0;
-                Vector3D b = Vector3D.Origin;
+                Vector b = Vector.Origin();
                 for (int j = 0; j < hs.Length; j++)
                 {
                     var vv = pmesh.Halfedges.EndVertex(hs[j]);
@@ -64,7 +64,7 @@ namespace ALDGP
 
             for (int i = 0; i < n; i++)
             {
-                textureVerts[free_vertices[i]] = new Vector3D(X[i], X[n + i], 0.0);
+                textureVerts[free_vertices[i]] = new Vector(X[i], X[n + i], 0.0);
             }           
 
             return pmesh;

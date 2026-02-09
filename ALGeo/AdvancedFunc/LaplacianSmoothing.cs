@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Plankton;
 
-namespace ALDGP
+namespace ALGeo
 {
     public class LaplacianSmoothing
     {
         public static PlanktonMesh ExplicitMethod(PlanktonMesh pmesh, double lambda, int iterations, bool keepBoundary = true)
         {
-            var laplace = new Vector3D[pmesh.Vertices.Count];
+            var laplace = new Vector[pmesh.Vertices.Count];
             var ew = LaplaceOperator.CotLaplaceEdgeWeight(pmesh);
 
             for (int iter = 0; iter < iterations; iter++)
             {
                 for (int i = 0; i < pmesh.Vertices.Count; i++)
                 {
-                    laplace[i] = Vector3D.Origin;
+                    laplace[i] = Vector.Origin();
                     if (!(keepBoundary && pmesh.Vertices.IsBoundary(i)))
                     {
                         double w = 0;
@@ -24,7 +24,7 @@ namespace ALDGP
                         for (int j = 0; j < hes.Length; j++)
                         {
                             w += ew[hes[j] / 2];
-                            laplace[i] += (pmesh.Vertices[pmesh.Halfedges.EndVertex(hes[j])].ToVector3D() - pmesh.Vertices[i].ToVector3D()) * ew[hes[j] / 2];
+                            laplace[i] += (pmesh.Vertices[pmesh.Halfedges.EndVertex(hes[j])].ToVector() - pmesh.Vertices[i].ToVector()) * ew[hes[j] / 2];
                         }
                         laplace[i] /= w;
                     }
@@ -69,13 +69,13 @@ namespace ALDGP
                 var vweight = 0.5 / DifferentialGeometry.MixedVoronoiArea(pmesh, v);
                 var hs = pmesh.Vertices.GetHalfedges(v);
                 var ww = 0.0;
-                Vector3D b = pmesh.Vertices[v].ToVector3D() / vweight;
+                Vector b = pmesh.Vertices[v].ToVector() / vweight;
                 for (int j = 0; j < hs.Length; j++)
                 {
                     var vv = pmesh.Halfedges.EndVertex(hs[j]);
                     ww += eweight[hs[j] >> 1];
                     if (pmesh.Vertices.IsBoundary(vv))
-                        b -= -timestep * eweight[hs[j] >> 1] * pmesh.Vertices[vv].ToVector3D();
+                        b -= -timestep * eweight[hs[j] >> 1] * pmesh.Vertices[vv].ToVector();
                     else
                         L.Add(new Triplet(i, idx[vv], -timestep * eweight[hs[j] >> 1]));
                 }

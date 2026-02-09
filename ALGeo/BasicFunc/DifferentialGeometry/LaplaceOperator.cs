@@ -2,7 +2,7 @@
 using System.Linq;
 using Plankton;
 
-namespace ALDGP
+namespace ALGeo
 {
     public class LaplaceOperator : DifferentialGeometry
     {
@@ -11,16 +11,16 @@ namespace ALDGP
         /// </summary>
         /// <param name="pmesh">Input a plankton mesh.</param>
         /// <returns>The uniform laplace position of each vertex.</returns>
-        public static Vector3D[] UniformLaplace(PlanktonMesh pmesh)
+        public static Vector[] UniformLaplace(PlanktonMesh pmesh)
         {
-            Vector3D[] laplace = new Vector3D[pmesh.Vertices.Count];
+            Vector[] laplace = new Vector[pmesh.Vertices.Count];
             for (int i = 0; i < pmesh.Halfedges.Count; i++)
             {
                 if (!(pmesh.Halfedges[i].AdjacentFace == -1))
                 {
                     var a = pmesh.Halfedges[i].StartVertex;
                     var b = pmesh.Halfedges.EndVertex(i);
-                    laplace[a] += pmesh.Vertices[b].ToVector3D();
+                    laplace[a] += pmesh.Vertices[b].ToVector();
                 }
             }
 
@@ -35,13 +35,13 @@ namespace ALDGP
         /// </summary>
         /// <param name="pmesh">Input a plankton mesh.</param>
         /// <returns>The cotangent laplace positions of each vertex.</returns>
-        public static Vector3D[] CotangentLaplace(PlanktonMesh pmesh)
+        public static Vector[] CotangentLaplace(PlanktonMesh pmesh)
         {
-            var laplace = new Vector3D[pmesh.Vertices.Count];
+            var laplace = new Vector[pmesh.Vertices.Count];
             var ew = CotLaplaceEdgeWeight(pmesh);
             for (int i = 0; i < pmesh.Vertices.Count; i++)
             {
-                laplace[i] = Vector3D.Origin;
+                laplace[i] = Vector.Origin();
                 if (!pmesh.Vertices.IsBoundary(i))
                 {
                     double w = 0;
@@ -50,8 +50,8 @@ namespace ALDGP
                     {
                         w += ew[hes[j] / 2];
                         laplace[i] +=
-                            (pmesh.Vertices[pmesh.Halfedges.EndVertex(hes[j])].ToVector3D() -
-                             pmesh.Vertices[i].ToVector3D()) * ew[hes[j] / 2];
+                            (pmesh.Vertices[pmesh.Halfedges.EndVertex(hes[j])].ToVector() -
+                             pmesh.Vertices[i].ToVector()) * ew[hes[j] / 2];
                     }
 
                     laplace[i] /= w;
@@ -74,13 +74,13 @@ namespace ALDGP
                 // get the opposite halfedge
                 var ho = pmesh.Halfedges.GetPairHalfedge(h);
 
-                var a = pmesh.Vertices[pmesh.Halfedges[h].StartVertex].ToVector3D();
-                var c = pmesh.Vertices[pmesh.Halfedges[ho].StartVertex].ToVector3D();
+                var a = pmesh.Vertices[pmesh.Halfedges[h].StartVertex].ToVector();
+                var c = pmesh.Vertices[pmesh.Halfedges[ho].StartVertex].ToVector();
 
                 if (pmesh.Halfedges[h].AdjacentFace != -1)
                 {
                     var b = pmesh.Vertices[pmesh.Halfedges[pmesh.Halfedges[h].PrevHalfedge].StartVertex]
-                        .ToVector3D(); // prev vertex
+                        .ToVector(); // prev vertex
 
                     var ba = a - b;
                     var bc = c - b;
@@ -92,7 +92,7 @@ namespace ALDGP
                 if (pmesh.Halfedges[ho].AdjacentFace != -1)
                 {
                     var d = pmesh.Vertices[pmesh.Halfedges.EndVertex(pmesh.Halfedges[ho].NextHalfedge)]
-                        .ToVector3D(); // prev vertex
+                        .ToVector(); // prev vertex
 
                     var da = a - d;
                     var dc = c - d;

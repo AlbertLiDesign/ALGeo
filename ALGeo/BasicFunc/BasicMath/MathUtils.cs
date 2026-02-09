@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace ALDGP
+namespace ALGeo
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct Triplet
@@ -51,7 +51,7 @@ namespace ALDGP
         /// <param name="a">The first point.</param>
         /// <param name="b">The second point.</param>
         /// <returns>Return a cotangent value.</returns>
-        public static double Cotan(Vector3D a, Vector3D b)
+        public static double Cotan(Vector a, Vector b)
         {
             return a*b / a.CrossProduct(b).Length;
         }

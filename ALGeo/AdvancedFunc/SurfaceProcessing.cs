@@ -1,10 +1,10 @@
-﻿using ALDGP;
+﻿using ALGeo;
 using Plankton;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ALDGP
+namespace ALGeo
 {
     public class SurfaceProcessing
     {
@@ -62,8 +62,8 @@ namespace ALDGP
                 var ps0 = pmesh.Faces.GetFaceVertices(f0);
                 var ps1 = pmesh.Faces.GetFaceVertices(f1);
 
-                var v1 = DifferentialGeometry.FaceNormal(pmesh.Vertices[ps0[0]].ToVector3D(), pmesh.Vertices[ps0[1]].ToVector3D(), pmesh.Vertices[ps0[2]].ToVector3D());
-                var v2 = DifferentialGeometry.FaceNormal(pmesh.Vertices[ps1[0]].ToVector3D(), pmesh.Vertices[ps1[1]].ToVector3D(), pmesh.Vertices[ps1[2]].ToVector3D());
+                var v1 = DifferentialGeometry.FaceNormal(pmesh.Vertices[ps0[0]].ToVector(), pmesh.Vertices[ps0[1]].ToVector(), pmesh.Vertices[ps0[2]].ToVector());
+                var v2 = DifferentialGeometry.FaceNormal(pmesh.Vertices[ps1[0]].ToVector(), pmesh.Vertices[ps1[1]].ToVector(), pmesh.Vertices[ps1[2]].ToVector());
 
                 if (v1*v2 / v1.Length / v2.Length < feature_cosine) { return true; }
                 else { return false; }
@@ -143,16 +143,16 @@ namespace ALDGP
                         var hfe = pmesh.Vertices.GetHalfedges(i);
 
                         var key = pmesh.Halfedges.EndVertex(hfe[0]);
-                        var pp = pmesh.Vertices[key].ToVector3D();
-                        var Mid_Point = new Vector3D((pp + pmesh.Vertices[i].ToVector3D()).X / 2.0f,
-                          (pp + pmesh.Vertices[i].ToVector3D()).Y / 2.0f, (pp + pmesh.Vertices[i].ToVector3D()).Z / 2.0f);
+                        var pp = pmesh.Vertices[key].ToVector();
+                        var Mid_Point = new Vector((pp + pmesh.Vertices[i].ToVector()).X / 2.0f,
+                          (pp + pmesh.Vertices[i].ToVector()).Y / 2.0f, (pp + pmesh.Vertices[i].ToVector()).Z / 2.0f);
                         int id = dual.Vertices.Add(Mid_Point.X, Mid_Point.Y, Mid_Point.Z);
                         ids[1] = id;
 
                         var key2 = pmesh.Halfedges.EndVertex(hfe[hfe.Length - 1]);
-                        var pp2 = pmesh.Vertices[key2].ToVector3D();
-                        var Mid_Point2 = new Vector3D((pp2 + pmesh.Vertices[i].ToVector3D()).X / 2.0f,
-                          (pp2 + pmesh.Vertices[i].ToVector3D()).Y / 2.0f, (pp2 + pmesh.Vertices[i].ToVector3D()).Z / 2.0f);
+                        var pp2 = pmesh.Vertices[key2].ToVector();
+                        var Mid_Point2 = new Vector((pp2 + pmesh.Vertices[i].ToVector()).X / 2.0f,
+                          (pp2 + pmesh.Vertices[i].ToVector()).Y / 2.0f, (pp2 + pmesh.Vertices[i].ToVector()).Z / 2.0f);
                         int id2 = dual.Vertices.Add(Mid_Point2.X, Mid_Point2.Y, Mid_Point2.Z);
                         ids[adjF.Length + 2] = id2;
 

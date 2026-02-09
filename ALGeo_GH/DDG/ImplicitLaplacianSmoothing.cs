@@ -1,4 +1,4 @@
-﻿using ALDGP;
+﻿using ALGeo;
 using Grasshopper.Kernel;
 using PlanktonGh;
 using Rhino.Geometry;
@@ -11,16 +11,14 @@ using System.Threading.Tasks;
 
 namespace ALGeo_GH
 {
-    public class ExplicitLaplacianSmoothing : GH_Component
+    public class ImplicitLaplacianSmoothing : GH_Component
     {
-        public ExplicitLaplacianSmoothing()
-          : base("Explicit Laplacian Smoothing", "Smoothing", "Smooth a mesh using cotagent laplace operator", "ALGeo", "DDG") { }
+        public ImplicitLaplacianSmoothing()
+          : base("Implicit Laplacian Smoothing", "Smoothing", "Smooth a mesh using cotangent laplace operator", "ALGeo", "DDG") { }
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "M", "Input a mesh.", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Lambda", "L", "The smoothness in a single step iteration", GH_ParamAccess.item, 0.1);
-            pManager.AddIntegerParameter("Iteration", "I", "The number of iteration.", GH_ParamAccess.item, 1);
-            pManager.AddBooleanParameter("KeepBoundary", "B", "Keep boundary or not.", GH_ParamAccess.item, true);
+            pManager.AddNumberParameter("Lambda", "L", "The smoothness in a single step iteration", GH_ParamAccess.item, 10);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -32,14 +30,10 @@ namespace ALGeo_GH
         {
             Mesh mesh = new Mesh();
             double lambda = 0.0;
-            int iter = 1;
-            bool keepBoundary = true;
             DA.GetData("Mesh", ref mesh);
             DA.GetData("Lambda", ref lambda);
-            DA.GetData("Iteration", ref iter);
-            DA.GetData("KeepBoundary", ref keepBoundary);
 
-            var pmesh = LaplacianSmoothing.ExplicitMethod(mesh.ToPlanktonMesh(), (float)lambda, iter, keepBoundary);
+            var pmesh = LaplacianSmoothing.ImplicitMethod(mesh.ToPlanktonMesh(), (float)lambda);
             DA.SetData("Mesh", pmesh.ToRhinoMesh());
 
         }
@@ -47,7 +41,7 @@ namespace ALGeo_GH
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("{59656BF0-49B4-4AA9-BFB8-71202BEDEE38}"); }
+            get { return new Guid("{3EC02E06-2D0D-4B20-88CD-7392DF93B1ED}"); }
         }
     }
 }

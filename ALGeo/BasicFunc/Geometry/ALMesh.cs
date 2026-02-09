@@ -1,0 +1,330 @@
+﻿using ALGeo.BasicFunc.Geometry;
+using KDTree;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+
+namespace ALGeo
+{
+    public class ALMesh
+    {
+        public Vector[] Vertices;
+        public Face[] Faces;
+
+        #region Constructors
+        public ALMesh()
+        {
+            Vertices = new Vector[3];
+            Faces = new Face[1];
+        }
+        public ALMesh(ALMesh mesh)
+        {
+            Vertices = mesh.Vertices;
+            Faces = mesh.Faces;
+        }
+        public ALMesh(Vector[] vertices, Face[] faces)
+        {
+            Vertices = vertices.ToArray();
+            Faces = faces.ToArray();
+        }
+        #endregion
+
+        /// <summary>
+        /// Weld mesh based on a given tolerance
+        /// </summary>
+        /// <param name="tolerance"></param>
+        /// <exception cref="Exception"></exception>
+        public void WeldVertices(double tolerance, int maximumReturned = 8)
+        {
+            List<int> newVerts = new List<int>();
+            int[] map = new int[Vertices.Length];
+
+            // Create mapping and filter duplicates.
+            // Construct KDTree
+            var tree = new KDTree<int>(3);
+            // Get centers
+            for (int i = 0; i < Vertices.Length; i++)
+            {
+                tree.AddPoint(new double[3]
+                {
+                    Vertices[i].X,
+                    Vertices[i].Y,
+                    Vertices[i].Z
+                }, i);
+            }
+            var result = GeoUtils.KDTreeMultiSearch(Vertices, tree, tolerance, maximumReturned);
+
+            bool[] visited = new bool[Vertices.Length];
+            int num = 0;
+            for (int i = 0; i < result.Length; i++)
+            {
+                // Find the minimum index
+                int min = result[i].Min();
+
+                // If the minimum index has been visited
+                if (!visited[min])
+                {
+                    // Sign and add the vertex with the minimum index
+                    visited[min] = true;
+                    newVerts.Add(i);
+                    // All adjacent vertices are indexed
+                    for (int j = 0; j < result[i].Count; j++)
+                        map[result[i][j]] = num;
+                    num++;
+                }
+            }
+
+            // create new vertices
+            Vector[] updVerts = new Vector[newVerts.Count];
+            for (int i = 0; i < newVerts.Count; i++)
+            {
+                updVerts[i] = Vertices[newVerts[i]];
+            }
+            // map the triangle to the new vertices
+            Face[] updFaces = new Face[Faces.Length];
+            for (int i = 0; i < Faces.Length; i++)
+            {
+                if (Faces[i].Vert_ID.Length == 3)
+                {
+                    updFaces[i] = new Face(
+                    map[Faces[i].Vert_ID[0]],
+                    map[Faces[i].Vert_ID[1]],
+                    map[Faces[i].Vert_ID[2]]
+                    );
+                }
+                else if (Faces[i].Vert_ID.Length == 4)
+                {
+                    updFaces[i] = new Face(
+                    map[Faces[i].Vert_ID[0]],
+                    map[Faces[i].Vert_ID[1]],
+                    map[Faces[i].Vert_ID[2]],
+                    map[Faces[i].Vert_ID[3]]
+                    );
+                }
+                else
+                {
+                    throw new Exception("There is a invalid face.");
+                }
+            }
+
+            Vertices = updVerts;
+            Faces = updFaces;
+        }
+
+        /// <summary>
+        /// Remove all duplicated faces
+        /// </summary>
+        public void RemoveDuplicatedFaces()
+        {
+            Dictionary<string, List<int>> dirFaces = new Dictionary<string, List<int>>();
+            List<int> del = new List<int>();
+            for (int i = 0; i < Faces.Length; i++)
+            {
+                string meshKey = SortKey(Faces[i]);
+                if (!dirFaces.ContainsKey(meshKey))
+                {
+                    var ids = new List<int>();
+                    ids.Add(i);
+                    dirFaces.Add(meshKey, ids);
+                }
+                else
+                {
+                    dirFaces[meshKey].Add(i);
+                    del.Add(dirFaces[meshKey][1]);
+                    del.Add(dirFaces[meshKey][0]);
+                }
+            }
+
+            bool[] toDelete = new bool[Faces.Length];
+            foreach (int index in del)
+            {
+                toDelete[index] = true;
+            }
+
+            var upd_faces = new List<Face>();
+            for (int i = 0; i < Faces.Length; i++)
+            {
+                if (!toDelete[i])
+                {
+                    upd_faces.Add(Faces[i]);
+                }
+            }
+
+            Faces = upd_faces.ToArray();
+        }
+
+        public ALBox GetBoundingBox()
+        {
+            double[] xlist = new double[Vertices.Length];
+            double[] ylist = new double[Vertices.Length];
+            double[] zlist = new double[Vertices.Length];
+            for (int i = 0; i < Vertices.Length; i++)
+            {
+                xlist[i] = Vertices[i].X;
+                ylist[i] = Vertices[i].Y;
+                zlist[i] = Vertices[i].Z;
+            }
+
+            double xmax = xlist.Max();
+            double xmin = xlist.Min();
+            double ymax = ylist.Max();
+            double ymin = ylist.Min();
+            double zmax = zlist.Max();
+            double zmin = zlist.Min();
+
+            Vector[] vertices = new Vector[8]
+            {
+               new Vector(xmin,ymin,zmin),
+               new Vector(xmax,ymin,zmin),
+               new Vector(xmax,ymax,zmin),
+               new Vector(xmin,ymax,zmin),
+               new Vector(xmin,ymin,zmax),
+               new Vector(xmax,ymin,zmax),
+               new Vector(xmax,ymax,zmax),
+               new Vector(xmin,ymax,zmax)
+            };
+            Face[] faces = new Face[6]
+            {
+                new Face(0,3,2,1),
+                new Face(0,1,5,4),
+                new Face(1,2,6,5),
+                new Face(2,3,7,6),
+                new Face(3,0,4,7),
+                new Face(4,5,6,7)
+            };
+
+            var mesh = new ALMesh(vertices, faces);
+            return new ALBox(mesh, vertices[0], vertices[6]);
+        }
+        public void Triangulation()
+        {
+            List<Face> faces = new List<Face>();
+            for (int i = 0; i < Faces.Length; i++)
+            {
+                if (Faces[i].Vert_ID.Length == 3)
+                    faces.Add(Faces[i]);
+                else if (Faces[i].Vert_ID.Length == 4)
+                {
+                    int a = Faces[i].Vert_ID[0];
+                    int b = Faces[i].Vert_ID[1];
+                    int c = Faces[i].Vert_ID[2];
+                    int d = Faces[i].Vert_ID[3];
+
+                    faces.Add(new Face(a, b, d));
+                    faces.Add(new Face(d, b, c));
+                }
+                else throw new Exception("Faces only have 3 or 4 vertices.");
+            }
+            Faces = faces.ToArray();
+        }
+
+        /// <summary>
+        /// Calculate mesh volume
+        /// </summary>
+        public double GetVolume()
+        {
+            double[] volume = new double[Faces.Length];
+            for (int i = 0; i < Faces.Length; i++)
+            {
+                var verts = Vertices;
+                int a = Faces[i].Vert_ID[0];
+                int b = Faces[i].Vert_ID[1];
+                int c = Faces[i].Vert_ID[2];
+
+                if (Faces[i].Vert_ID.Length == 3)
+                    volume[i] = GeoUtils.SignedVolumeOfTriangle(verts[a], verts[b], verts[c]);
+                else if (Faces[i].Vert_ID.Length == 4)
+                {
+                    int d = Faces[i].Vert_ID[3];
+                    var vol1 = GeoUtils.SignedVolumeOfTriangle(verts[a], verts[b], verts[d]);
+                    var vol2 = GeoUtils.SignedVolumeOfTriangle(verts[d], verts[b], verts[c]);
+                    volume[i] = vol1 + vol2;
+                }
+                else throw new Exception("Faces only have 3 or 4 vertices.");
+            }
+            return Math.Abs(volume.Sum());
+        }
+
+        public static double GetVolumeFromMeshes(ALMesh[] meshes)
+        {
+            double[] vols = new double[meshes.Length];
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                if (meshes[i] != null)
+                    vols[i] = meshes[i].GetVolume();
+            }
+            Parallel.For(0, meshes.Length, i =>
+            {
+                if (meshes[i] != null)
+                    vols[i] = meshes[i].GetVolume();
+            });
+            return vols.Sum();
+        }
+
+        private static string SortKey(Face face)
+        {
+            List<int> list = new List<int>();
+            if (face.Vert_ID.Length == 3)
+            {
+                list = new List<int> { face.Vert_ID[0], face.Vert_ID[1], face.Vert_ID[2] };
+                list.Sort();
+            }
+            if (face.Vert_ID.Length == 4)
+            {
+                list = new List<int> { face.Vert_ID[0], face.Vert_ID[1], face.Vert_ID[2], face.Vert_ID[3] };
+                list.Sort();
+            }
+            return string.Join(",", list);
+        }
+        public static ALMesh CombineMeshes(ALMesh[] meshes)
+        {
+            List<Vector> verts = new List<Vector>();
+            List<Face> faces = new List<Face>();
+
+            int num = 0;
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                if (meshes[i] != null)
+                {
+                    var id = new int[meshes[i].Vertices.Length];
+                    for (int j = 0; j < meshes[i].Vertices.Length; j++)
+                    {
+                        id[j] = num;
+                        verts.Add(meshes[i].Vertices[j]);
+                        num++;
+                    }
+                    for (int j = 0; j < meshes[i].Faces.Length; j++)
+                    {
+                        if (meshes[i].Faces[j].Vert_ID.Length == 3)
+                        {
+                            faces.Add(new Face(
+                            id[meshes[i].Faces[j].Vert_ID[0]],
+                            id[meshes[i].Faces[j].Vert_ID[1]],
+                            id[meshes[i].Faces[j].Vert_ID[2]]
+                            ));
+                        }
+                        else if (meshes[i].Faces[j].Vert_ID.Length == 4)
+                        {
+                            faces.Add(new Face(
+                            id[meshes[i].Faces[j].Vert_ID[0]],
+                            id[meshes[i].Faces[j].Vert_ID[1]],
+                            id[meshes[i].Faces[j].Vert_ID[2]],
+                            id[meshes[i].Faces[j].Vert_ID[3]]
+                            ));
+                        }
+                        else
+                        {
+                            throw new Exception("There is a invalid face.");
+                        }
+                    }
+                }
+            }
+            return new ALMesh(verts.ToArray(), faces.ToArray());
+        }
+
+    }
+}
